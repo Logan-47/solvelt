@@ -7,25 +7,24 @@ body {
   cursor: pointer;
 }
 
-#menu {
+#custImage {
   position: relative;
   list-style-type: none;
-  padding-left: 5px;
+  padding-right: 5px;
   z-index: 1000;
   /* 1 */
   display: inline-block;
   text-align: center;
 }
 
-#menu li {
-  margin: 2px;
-  padding: 4px 10px;
-  border-radius: 5px;
-  background-color: #ffff80;
-}
 
-#menu li:hover {
-  background-color: #ffDD60;
+#timeTaken {
+  position: relative;
+  padding-left: 50%;
+  z-index: 1000;
+  /* 1 */
+  display: inline-block;
+  text-align: center;
 }
 
 #forPuzzle {
@@ -35,8 +34,9 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgba(27, 25, 25, 0.255);
+  background-color: #FFFBE7;
   overflow: hidden;
+  border-radius: 16px;
 }
 
 .polypiece {

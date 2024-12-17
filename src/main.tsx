@@ -6,7 +6,7 @@ import { Devvit, useState, useInterval } from '@devvit/public-api';
 type WebViewMessage =
   | {
       type: 'action';
-      data: { gameWon: boolean, reset: boolean };
+      data: { gameWon: boolean, reset: boolean, started: boolean };
     }
 
 Devvit.configure({
@@ -14,7 +14,6 @@ Devvit.configure({
   redis: true,
 });
 
-var Draggabl
 
 // Add a custom post type to Devvit
 Devvit.addCustomPostType({
@@ -28,29 +27,31 @@ Devvit.addCustomPostType({
     });
 ;
     // Create a reactive state for web view visibility
-    const [webviewVisible, setWebviewVisible] = useState(false);
+    const [webviewVisible, setWebviewVisible] = useState(true);
     const [timer, setTimer] = useState(0);
-    const [gameWon, setGameWon] = useState(false);
+    const [gameState, setGameState] = useState("not_started");
+    const [isPaused, setIsPaused] = useState(false);
 
     const updateInterval = useInterval(() => {
-      setTimer((timer) => timer + 1);
+      setTimer((timer) => (timer + 1));
     }, 1000);
 
-    const stopTimer = () => {
-      updateInterval.stop();
-    };
 
     // When the web view invokes `window.parent.postMessage` this function is called
     const onMessage = async (msg: WebViewMessage) => {
       switch (msg.type) {
         case 'action':
           if(msg.data.gameWon) {
-            setGameWon(true)
+            setGameState("won")
             updateInterval.stop();
           }
 
           if(msg.data.reset) {
             setTimer((timer) => timer- timer);
+          }
+
+          if(msg.data.started) {
+            setGameState("started")
           }
           break;
 
@@ -60,16 +61,54 @@ Devvit.addCustomPostType({
     };
 
     // When the button is clicked, send initial data to web view and show it
-    const onShowWebviewClick = () => {
-      setWebviewVisible(true);
+    const onStateClick = () => {
+      // setWebviewVisible(true);
+      setGameState("started")
       updateInterval.start();
       context.ui.webView.postMessage('myWebView', {
-        type: 'initialData',
+        type: 'game-state',
         data: {
-          username: username,
+          gameState: "started",
         },
       });
     };
+
+    const resetGame = () => {
+      setGameState("not_started")
+      updateInterval.stop();
+      setTimer((timer) => timer- timer);
+      context.ui.webView.postMessage('myWebView', {
+        type: 'game-state',
+        data: {
+          reset: true,
+        },
+      });
+    }
+
+    const stopTimer = () => {
+      if(isPaused){
+        updateInterval.start();
+        setIsPaused(false);
+        context.ui.webView.postMessage('myWebView', {
+          type: 'game-state',
+          data: {
+            isPaused: false,
+          },
+        });
+      } else {
+        updateInterval.stop();
+        setIsPaused(true);
+        context.ui.webView.postMessage('myWebView', {
+          type: 'game-state',
+          data: {
+            isPaused: true,
+          },
+        });
+      }
+        
+      
+    };
+
 
     // Render the custom post type
     return (
@@ -80,39 +119,26 @@ Devvit.addCustomPostType({
           height={'20%'}
           // alignment="start top"
         >
-          <hstack alignment="middle">
-            <text size="xxlarge" weight="bold" alignment="middle" >
-              Solvelt Jigsaw
-            </text>
+          <hstack alignment="center" width='100%'>
             <spacer grow={true}></spacer>
-            <text size="large" alignment="end">User:  </text>
+            <text size="large">User:  </text>
             <text size="large" weight="bold" alignment="end">
               {' '}
               {username ?? ''}
             </text>
           </hstack>
-          <spacer />
           <spacer></spacer>
-          <hstack alignment="end">
-            <button onPress={onShowWebviewClick}>Start</button>
-            <spacer></spacer>
-            <spacer></spacer>
-            <button onPress={stopTimer}>Stop</button>
-            <spacer grow={true}></spacer>
-            <text size="large"> {gameWon ? 'WON 🎉' : ''} </text>
-            <spacer grow={true}></spacer>
-            <text alignment="middle" size="large">Timer: </text>
-            <text size="large" weight="bold" alignment="end">
-              {timer ? `${timer}s` : '0s'}
-            </text>
+          <spacer></spacer>
+          <hstack alignment='center'>
+              <text  size="xlarge" weight='bold'> {gameState === "not_started" ? 'Hit Start to Begin 🚀' : ''} </text>
+              <text  size="xlarge" weight='bold'> {gameState === "started" ? 'Start arranging 🧩' : ''} </text>
+              <text size="xlarge" weight='bold'> {gameState === "won" ? 'Amazing you won! 🎉 ' : ''} </text>
           </hstack>
-          <spacer></spacer>
+          <spacer />
         </vstack>
-
-        
-
+      
         <vstack grow={webviewVisible} height={webviewVisible ? '100%' : '0%'}>
-          <vstack border="thick" borderColor="black" height={webviewVisible ? '100%' : '0%'}>
+          <vstack height={webviewVisible ? '100%' : '0%'}>
             <webview
               id="myWebView"
               url="page.html"
@@ -122,6 +148,30 @@ Devvit.addCustomPostType({
             />
           </vstack>
         </vstack>
+
+        <spacer></spacer>
+
+        <hstack alignment="end">
+            <text alignment="bottom center" size="large">{gameState === 'won' ? 'Total Time Taken: ': 'Timer: '} </text>
+            <text size="large" weight="bold" alignment="bottom">
+              {timer ? `${Math.floor(timer/60)}m:${timer%60}s` : '0m:0s'}
+            </text>
+            <spacer grow={true}></spacer>
+            <spacer grow={true}></spacer>
+            <button onPress={onStateClick}  appearance='success' disabled={gameState != 'not_started'}>{gameState === 'won' ? 'restart': 'start'}</button>
+            <spacer></spacer>
+            <spacer></spacer>
+            <button onPress={stopTimer} disabled={(gameState === 'not_started' || gameState === 'won')} appearance={isPaused ? 'media': 'caution'}>{isPaused ? 'resume': 'pause'}</button>
+            <spacer></spacer>
+            <spacer></spacer>
+            <button onPress={resetGame}  disabled={gameState != 'started'} appearance='primary'>reset</button>
+            <spacer grow={true}></spacer>
+            <spacer grow={true}></spacer>
+            
+            <spacer></spacer>
+            <spacer></spacer>
+          </hstack>
+
       </vstack>
     );
   },

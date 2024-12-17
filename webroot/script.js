@@ -64,36 +64,10 @@ class App {
     }
 
 
-    // Burger Menu
-    let menu = (function () {
-      let menu = { items: [] };
-      document.querySelectorAll("#menu li").forEach(menuEl => {
-        let len = menu.items.length;
-        let item = { element: menuEl, len: len };
-        menu.items[len] = item;
-    
-      });
-    
-      menu.open = function () {
-        menu.items.forEach(item => item.element.style.display = "block");
-        menu.opened = true;
-      }
+    const btn = document.getElementById('custImage');
+    btn.addEventListener("click", loadFile);
 
-      menu.close = function () {
-        menu.items.forEach((item, k) => {
-          if (k > 0) item.element.style.display = "none"; // never hide element 0
-        });
-        menu.opened = false;
-      }
-      menu.items[0].element.addEventListener("click", () => {
-        if (menu.opened) menu.close(); else menu.open()
-      });
-      menu.items[1].element.addEventListener("click", loadFile);
-  
-      return menu;
-    })();
-
-    menu.close();
+    let gameState = "not_started";
 
     // Animations
     let animate = function () {
@@ -168,7 +142,6 @@ class App {
           } else return;
 
         case 20:
-          // menu.close();
           puzzle.create(); // create shape of pieces, independant of size
           puzzle.scale();
           puzzle.polyPieces.forEach(pp => {
@@ -186,9 +159,12 @@ class App {
           puzzle.polyPieces.forEach(pp => {
             pp.canvas.classList.add("moving");
           });
-          state = 30;
+          state = 26;
           break;
-
+        
+        case 26:
+            if(gameState === 'started') state = 30;
+            break;
         case 30: // launch movement
           puzzle.optimInitial(); // initial "optimal" spread position
 
@@ -300,7 +276,6 @@ class App {
           setTimeout(() => tmpImage.style.top = tmpImage.style.left = "50%", 0);
           puzzle.container.appendChild(tmpImage);
           state = 65;
-          // menu.open();
 
         case 65: // wait for new number of pieces - of new picture
           if (event && event.event == "nbpieces") {
@@ -318,6 +293,51 @@ class App {
       } // switch(state)
     }
     requestAnimationFrame(animate);
+
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'devvit-message') {
+        const { message } = event.data.data;
+        
+        if(message.data.gameState === "started") {
+          gameState = message.data.gameState;
+          requestAnimationFrame(animate);
+        }
+
+        
+      }
+    });
+
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'devvit-message') {
+        const { message } = event.data.data;
+        const puzzleContainer = document.getElementById('forPuzzle');
+        if(message.data.reset === true) {
+          puzzleContainer.style.pointerEvents = '';
+          gameState = "not_started";
+          loadInitialFile(puzzle);
+          state = 20;
+          requestAnimationFrame(animate);
+        }
+
+        
+      }
+    });
+
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'devvit-message') {
+        const { message } = event.data.data;
+        
+        const puzzleContainer = document.getElementById('forPuzzle');
+        if(message.data.isPaused === false) {
+          puzzleContainer.style.pointerEvents = '';
+        } else if(message.data.isPaused === true) {
+          puzzleContainer.style.pointerEvents = 'none';
+        }
+
+        
+      }
+    });
+
   }
 }
 
