@@ -82,7 +82,7 @@ Devvit.addCustomPostType({
         >
           <hstack alignment="middle">
             <text size="xxlarge" weight="bold" alignment="middle" >
-              Solvet Jigsaw
+              Solvelt Jigsaw
             </text>
             <spacer grow={true}></spacer>
             <text size="large" alignment="end">User:  </text>
