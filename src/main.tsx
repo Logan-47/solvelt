@@ -164,7 +164,7 @@ Devvit.addCustomPostType({
             <button onPress={stopTimer} disabled={(gameState === 'not_started' || gameState === 'won')} appearance={isPaused ? 'media': 'caution'}>{isPaused ? 'resume': 'pause'}</button>
             <spacer></spacer>
             <spacer></spacer>
-            <button onPress={resetGame}  disabled={gameState != 'started'} appearance='primary'>reset</button>
+            <button onPress={resetGame}  disabled={gameState == 'not_started'} appearance='primary'>reset</button>
             <spacer grow={true}></spacer>
             <spacer grow={true}></spacer>
             
